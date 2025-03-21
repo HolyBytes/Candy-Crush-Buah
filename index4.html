@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Candy Crush Buah</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: 'Comic Sans MS', sans-serif;
+            background: linear-gradient(45deg, #ff9a9e, #fad0c4);
+            animation: gradientBG 5s ease infinite alternate;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        #main-menu {
+            text-align: center;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 20px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin: 10px;
+            background: #ff6f61;
+            color: white;
+            transition: transform 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.1);
+        }
+
+        #game-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(8, 60px);
+            grid-template-rows: repeat(8, 60px);
+            gap: 5px;
+            margin-top: 20px;
+        }
+
+        .tile {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        #score {
+            margin: 20px;
+            font-size: 28px;
+            color: white;
+        }
+
+        .tile.bomb { background: #ff4757; }
+        .tile.striped { background: #2ed573; }
+    </style>
+</head>
+
+<body>
+
+    <!-- Main Menu -->
+    <div id="main-menu">
+        <h1>🍭 Candy Crush Buah 🍬</h1>
+        <button onclick="startGame()">Mulai Permainan</button>
+        <button onclick="showInstructions()">Cara Bermain</button>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container">
+        <div id="score">⭐ Skor: 0</div>
+        <div id="game-board"></div>
+        <button onclick="restartGame()">Restart</button>
+    </div>
+
+    <script>
+        const items = ['🍎', '🍌', '🍇', '🍉', '🍰', '🍭'];
+        const boardSize = 8;
+        let board = [];
+        let score = 0;
+
+        const gameBoard = document.getElementById('game-board');
+        const scoreDisplay = document.getElementById('score');
+
+        function startGame() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('game-container').style.display = 'flex';
+            score = 0;
+            initBoard();
+        }
+
+        function showInstructions() {
+            alert('🍬 Geser buah/permen untuk mencocokkan minimal 3 item:\n\n💣 Bom: Dapatkan dengan cocokkan 4 item (meledak area 3x3)\n🍭 Permen Garis: Dapatkan dengan cocokkan 5 item (menghapus baris/kolom).');
+        }
+
+        function restartGame() {
+            score = 0;
+            scoreDisplay.textContent = "⭐ Skor: 0";
+            initBoard();
+        }
+
+        function initBoard() {
+            board = [];
+            for (let i = 0; i < boardSize; i++) {
+                const row = [];
+                for (let j = 0; j < boardSize; j++) {
+                    row.push(randomItem());
+                }
+                board.push(row);
+            }
+            renderBoard();
+        }
+
+        function randomItem() {
+            return items[Math.floor(Math.random() * items.length)];
+        }
+
+        function renderBoard() {
+            gameBoard.innerHTML = '';
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    const tile = document.createElement('div');
+                    tile.classList.add('tile');
+                    tile.textContent = board[i][j];
+                    tile.dataset.row = i;
+                    tile.dataset.col = j;
+                    tile.addEventListener('click', handleTileClick);
+                    gameBoard.appendChild(tile);
+                }
+            }
+        }
+
+        let firstTile = null;
+
+        function handleTileClick(e) {
+            const row = parseInt(e.target.dataset.row);
+            const col = parseInt(e.target.dataset.col);
+
+            if (firstTile) {
+                swapTiles(firstTile.row, firstTile.col, row, col);
+                firstTile = null;
+            } else {
+                firstTile = { row, col };
+            }
+        }
+
+        function swapTiles(row1, col1, row2, col2) {
+            const temp = board[row1][col1];
+            board[row1][col1] = board[row2][col2];
+            board[row2][col2] = temp;
+            renderBoard();
+            setTimeout(checkMatches, 300);
+        }
+
+        function checkMatches() {
+            const matches = [];
+            for (let i = 0; i < boardSize; i++) {
+                for (let j = 0; j < boardSize; j++) {
+                    if (j < boardSize - 2 && board[i][j] === board[i][j + 1] && board[i][j] === board[i][j + 2]) {
+                        matches.push({ row: i, col: j });
+                        matches.push({ row: i, col: j + 1 });
+                        matches.push({ row: i, col: j + 2 });
+                    }
+                    if (i < boardSize - 2 && board[i][j] === board[i + 1][j] && board[i][j] === board[i + 2][j]) {
+                        matches.push({ row: i, col: j });
+                        matches.push({ row: i + 1, col: j });
+                        matches.push({ row: i + 2, col: j });
+                    }
+                }
+            }
+            if (matches.length > 0) {
+                removeMatches(matches);
+            }
+        }
+
+        function removeMatches(matches) {
+            matches.forEach(({ row, col }) => {
+                board[row][col] = randomItem();
+            });
+            score += matches.length;
+            scoreDisplay.textContent = `⭐ Skor: ${score}`;
+            renderBoard();
+            setTimeout(checkMatches, 300);
+        }
+
+        initBoard();
+    </script>
+
+</body>
+
+</html>
